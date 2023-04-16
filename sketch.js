@@ -1,107 +1,67 @@
-// Variáveis do jogo
-var jogador;
-var obstaculos = [];
+// Configurações do jogo
+let canvas;
+let player;
+let obstacles = [];
+let score = 0;
 
-// Configuração do jogo
 function setup() {
-  createCanvas(600, 400);
-  jogador = new Quadrado(); // Cria o jogador
+  canvas = createCanvas(800, 400);
+  canvas.parent("game-container");
+  player = createSprite(50, height - 50, 50, 50);
 }
 
-// Loop do jogo
 function draw() {
   background(220);
-  
-  // Atualiza o jogador
-  jogador.atualizar();
-  jogador.mostrar();
-  
-  // Cria novos obstáculos aleatoriamente
-  if (frameCount % 60 === 0) { // A cada segundo
-    var obstaculo = new Obstaculo();
-    obstaculos.push(obstaculo);
+
+  // Verifica se o jogador está pulando
+  if (player.position.y < height - 50) {
+    player.velocity.y += 0.5;
+  } else {
+    player.velocity.y = 0;
+    player.position.y = height - 50;
   }
-  
-  // Move e mostra os obstáculos
-  for (var i = obstaculos.length - 1; i >= 0; i--) {
-    obstaculos[i].atualizar();
-    obstaculos[i].mostrar();
-    
-    // Verifica colisão com o jogador
-    if (obstaculos[i].colidiu(jogador)) {
-      // Fim de jogo
-      console.log("Game Over");
-      noLoop(); // Para o loop do jogo
+
+  // Verifica se o jogador colidiu com os obstáculos
+  for (let i = 0; i < obstacles.length; i++) {
+    if (player.collide(obstacles[i])) {
+      gameOver();
     }
-    
-    // Remove os obstáculos fora da tela
-    if (obstaculos[i].saiuDaTela()) {
-      obstaculos.splice(i, 1);
+  }
+
+  // Cria novos obstáculos a cada 2 segundos
+  if (frameCount % 120 === 0) {
+    let obstacle = createSprite(width, height - 50, 50, 50);
+    obstacle.velocity.x = -3;
+    obstacles.push(obstacle);
+  }
+
+  // Remove obstáculos que saíram da tela
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    if (obstacles[i].position.x < -50) {
+      obstacles[i].remove();
+      obstacles.splice(i, 1);
+      score++;
     }
+  }
+
+  // Exibe a pontuação na tela
+  textSize(24);
+  fill(0);
+  text("Score: " + score, 20, 40);
+
+  // Atualiza a animação do jogador
+  drawSprites();
+}
+
+function keyPressed() {
+  // Verifica se a tecla de espaço foi pressionada para fazer o jogador pular
+  if (keyCode === 32 && player.position.y === height - 50) {
+    player.velocity.y = -10;
   }
 }
 
-// Classe do jogador
-class Quadrado {
-  constructor() {
-    this.x = width/2;
-    this.y = height - 40;
-    this.largura = 20;
-    this.altura = 20;
-    this.velocidade = 0;
-    this.gravidade = 0.6;
-  }
-  
-  atualizar() {
-    this.velocidade += this.gravidade;
-    this.y += this.velocidade;
-    
-    // Verifica colisão com o chão
-    if (this.y > height - this.altura/2) {
-      this.y = height - this.altura/2;
-      this.velocidade = 0;
-    }
-  }
-  
-  mostrar() {
-    fill(255);
-    rectMode(CENTER);
-    rect(this.x, this.y, this.largura, this.altura);
-  }
-  
-  pular() {
-    if (this.y === height - this.altura/2) {
-      this.velocidade = -12;
-    }
-  }
-}
-
-// Classe dos obstáculos
-class Obstaculo {
-  constructor() {
-    this.x = width;
-    this.y = height - 20;
-    this.largura = 20;
-    this.altura = 20;
-    this.velocidade = 5;
-  }
-  
-  atualizar() {
-    this.x -= this.velocidade;
-  }
-  
-  mostrar() {
-    fill(255, 0, 0);
-    rectMode(CENTER);
-    rect(this.x, this.y, this.largura, this.altura);
-  }
-  
-  colidiu(quadrado) {
-    return collideRectRect(this.x - this.largura/2, this.y - this.altura/2, this.largura, this.altura,
-                            quadrado.x - quadrado.largura/2, quadrado.y - quadrado.altura/2, quadrado.largura, quadrado.altura);
-  }
-  
-  saiuDaTela() {
-    return this.x < -this.largura/2;
-  }
+function gameOver() {
+  noLoop();
+  alert("Game Over! Your score: " + score);
+  location.reload(); // Reiniciar o jogo após o game over
 }
